@@ -1,92 +1,93 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 
-// Use Vite's glob import to automatically gather all pdf files from src/content
+// Vite glob import — eagerly collects ALL PDFs from src/content (all subfolders)
 const pdfModules = import.meta.glob('/src/content/**/*.pdf', { as: 'url', eager: true });
+
+// Debug: log what Vite collected (remove after confirming it works)
+// console.log('PDF modules found:', Object.keys(pdfModules));
 
 function Resources() {
   const [selectedGrade, setSelectedGrade] = useState(null);
 
-  // Generate Grades 1 to 10
   const grades = Array.from({ length: 10 }, (_, i) => i + 1);
   const tests = Array.from({ length: 10 }, (_, i) => i + 1);
 
-  // A helper to find the correct URL for a given grade and specific test/syllabus
+  /**
+   * Find a PDF URL by grade, type (syllabus | test), and optional test number.
+   * Matches against the full module path, case-insensitively.
+   */
   const getFileUrl = (grade, type, testNum = null) => {
-    const gradeSearchStr = `Grade ${grade} `;
-    
+    const gradeKey = grade === 'Colleges' ? 'Colleges Grade' : `Grade ${grade}`;
+
     for (const [path, url] of Object.entries(pdfModules)) {
-      if (path.includes(gradeSearchStr)) {
-        const lowerPath = path.toLowerCase();
-        
-        if (type === 'syllabus' && lowerPath.includes('syllabus')) {
-          return url;
-        }
-        
-        if (type === 'test' && testNum !== null) {
-          // ensure we match "test 1 " or "test 1." but NOT "test 10" when looking for 1
-          const testSearchRegex = new RegExp(`test\\s*${testNum}[\\s\\.]`, 'i');
-          if (testSearchRegex.test(lowerPath)) {
-            return url;
-          }
-        }
+      // Normalise path for comparison
+      const normalised = path.replace(/\\/g, '/');
+      if (!normalised.includes(gradeKey)) continue;
+
+      const lower = normalised.toLowerCase();
+
+      if (type === 'syllabus' && lower.includes('syllabus')) {
+        return url;
+      }
+
+      if (type === 'test' && testNum !== null) {
+        // Match "test 1 ", "test 1.", "test1_" etc. but NOT test 10 when looking for 1
+        const re = new RegExp(`test\\s*${testNum}[\\s\\._\\-]`, 'i');
+        if (re.test(lower)) return url;
       }
     }
-    return null; // Return null if file is missing
+    return null;
   };
 
   return (
     <div className="resources-page pt-32 pb-16 min-h-screen">
-      <div className="container mx-auto" style={{maxWidth: '900px'}}>
-        
+      <div className="container mx-auto" style={{ maxWidth: '960px' }}>
+
+        {/* Page Header */}
         <div className="text-center mb-10">
-          <h1 className="hero-title" style={{fontSize: '3rem'}}>AbdullahHayatStudyHub Resources</h1>
+          <h1 className="hero-title resources-hero-title">
+            Study&nbsp;<span className="gradient-text">Resources</span>
+          </h1>
           <p className="hero-subtitle">
-            Select your grade to view and download the available tests and syllabus material.
+            Select your grade below to view and download tests &amp; syllabus materials.
           </p>
         </div>
 
-        {/* Grade Selection Buttons */}
+        {/* Grade selector */}
         <div className="grade-selector mb-10">
           <h2 className="text-center mb-4">Select Your Grade</h2>
-          <div className="flex-center-wrap" style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', justifyContent: 'center' }}>
+          <div className="grade-btn-grid">
             {grades.map(g => (
-              <button 
-                key={g} 
+              <button
+                key={g}
                 onClick={() => setSelectedGrade(g)}
-                className={`btn ${selectedGrade === g ? 'btn-primary' : 'btn-secondary'} btn-lg`}
-                style={{ width: '120px' }}
+                className={`btn grade-btn ${selectedGrade === g ? 'btn-primary' : 'btn-secondary'}`}
               >
                 Grade {g}
               </button>
             ))}
-            <button 
-                onClick={() => setSelectedGrade('Colleges')}
-                className={`btn ${selectedGrade === 'Colleges' ? 'btn-primary' : 'btn-secondary'} btn-lg`}
-                style={{ width: '150px' }}
+            <button
+              onClick={() => setSelectedGrade('Colleges')}
+              className={`btn grade-btn grade-btn--wide ${selectedGrade === 'Colleges' ? 'btn-primary' : 'btn-secondary'}`}
             >
               Colleges Grade
             </button>
           </div>
         </div>
 
-        {/* Display Test & Syllabus if a grade is selected */}
+        {/* Resource grid for selected grade */}
         {selectedGrade && (
           <div className="grade-content content-reveal active glass-box mt-5 p-5">
             <h3 className="gradient-text mb-4 text-center">
               {selectedGrade === 'Colleges' ? 'Colleges Grade' : `Grade ${selectedGrade}`} Resources
             </h3>
-            
-            <div className="test-grid" style={{
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
-              gap: '1rem',
-              marginBottom: '2rem'
-            }}>
+
+            <div className="resource-grid">
               {tests.map(t => {
                 const testUrl = getFileUrl(selectedGrade, 'test', t);
                 return (
-                  <div key={t} className="file-card" style={{opacity: testUrl ? 1 : 0.5}}>
-                    <span style={{fontSize: '2.2rem'}}>📄</span>
+                  <div key={t} className="file-card" style={{ opacity: testUrl ? 1 : 0.5 }}>
+                    <span className="file-card-icon">📄</span>
                     <strong>Test {t}</strong>
                     {testUrl ? (
                       <div className="file-actions">
@@ -94,17 +95,18 @@ function Resources() {
                         <a href={testUrl} download className="btn btn-sm btn-primary">Download</a>
                       </div>
                     ) : (
-                      <button className="btn btn-sm" disabled style={{background: 'gray', color: '#fff', width:'100%'}}>Not Available</button>
+                      <button className="btn btn-sm btn-unavailable" disabled>Not Available</button>
                     )}
                   </div>
                 );
               })}
-              
+
+              {/* Syllabus card */}
               {(() => {
                 const syllabusUrl = getFileUrl(selectedGrade, 'syllabus');
                 return (
-                  <div className="file-card" style={{border: '1px solid var(--secondary)', opacity: syllabusUrl ? 1 : 0.5}}>
-                    <span style={{fontSize: '2.2rem'}}>📑</span>
+                  <div className="file-card syllabus-card" style={{ opacity: syllabusUrl ? 1 : 0.5 }}>
+                    <span className="file-card-icon">📑</span>
                     <strong>Syllabus</strong>
                     {syllabusUrl ? (
                       <div className="file-actions">
@@ -112,15 +114,15 @@ function Resources() {
                         <a href={syllabusUrl} download className="btn btn-sm btn-primary">Download</a>
                       </div>
                     ) : (
-                      <button className="btn btn-sm" disabled style={{background: 'gray', color: '#fff', width:'100%'}}>Not Available</button>
+                      <button className="btn btn-sm btn-unavailable" disabled>Not Available</button>
                     )}
                   </div>
                 );
               })()}
             </div>
-            
-            <p className="text-center" style={{fontSize: '0.9rem', color: '#94a3b8', marginTop: '1rem'}}>
-              * If a file is missing, it has not yet been uploaded to the system. Clicking download will save the PDF directly to your device.
+
+            <p className="resources-note">
+              * If a file shows "Not Available" it hasn't been uploaded yet. Downloads save the PDF directly to your device.
             </p>
           </div>
         )}
