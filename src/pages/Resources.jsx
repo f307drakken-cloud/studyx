@@ -17,12 +17,14 @@ function Resources() {
    * Matches against the full module path, case-insensitively.
    */
   const getFileUrl = (grade, type, testNum = null) => {
+    // Construct a safe regex for the grade. Add \b or [^\d] so "Grade 1" doesn't match "Grade 10"
     const gradeKey = grade === 'Colleges' ? 'Colleges Grade' : `Grade ${grade}`;
+    const gradeRegex = new RegExp(`${gradeKey}(?!\\d)`, 'i');
 
     for (const [path, url] of Object.entries(pdfModules)) {
       // Normalise path for comparison
       const normalised = path.replace(/\\/g, '/');
-      if (!normalised.includes(gradeKey)) continue;
+      if (!gradeRegex.test(normalised)) continue;
 
       const lower = normalised.toLowerCase();
 
