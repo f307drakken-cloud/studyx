@@ -37,6 +37,10 @@ function Resources() {
         const re = new RegExp(`test\\s*${testNum}[\\s\\._\\-]`, 'i');
         if (re.test(lower)) return url;
       }
+
+      if (type === 'combined' && lower.includes('combine')) {
+        return url;
+      }
     }
     return null;
   };
@@ -85,42 +89,84 @@ function Resources() {
             </h3>
 
             <div className="resource-grid">
-              {tests.map(t => {
-                const testUrl = getFileUrl(selectedGrade, 'test', t);
-                return (
-                  <div key={t} className="file-card" style={{ opacity: testUrl ? 1 : 0.5 }}>
-                    <span className="file-card-icon">📄</span>
-                    <strong>Test {t}</strong>
-                    {testUrl ? (
-                      <div className="file-actions">
-                        <a href={testUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary">Open</a>
-                        <a href={testUrl} download className="btn btn-sm btn-primary">Download</a>
+              {selectedGrade === 'Colleges' ? (
+                <>
+                  {/* Two specific cards for Colleges Grade */}
+                  {(() => {
+                    const combinedUrl = getFileUrl('Colleges', 'combined');
+                    return (
+                      <div className="file-card" style={{ opacity: combinedUrl ? 1 : 0.5 }}>
+                        <span className="file-card-icon">📄</span>
+                        <strong>Combined Tests 1-10</strong>
+                        {combinedUrl ? (
+                          <div className="file-actions">
+                            <a href={combinedUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary">Open</a>
+                            <a href={combinedUrl} download className="btn btn-sm btn-primary">Download</a>
+                          </div>
+                        ) : (
+                          <button className="btn btn-sm btn-unavailable" disabled>Not Available</button>
+                        )}
                       </div>
-                    ) : (
-                      <button className="btn btn-sm btn-unavailable" disabled>Not Available</button>
-                    )}
-                  </div>
-                );
-              })}
+                    );
+                  })()}
+                  {(() => {
+                    const syllabusUrl = getFileUrl('Colleges', 'syllabus');
+                    return (
+                      <div className="file-card syllabus-card" style={{ opacity: syllabusUrl ? 1 : 0.5 }}>
+                        <span className="file-card-icon">📑</span>
+                        <strong>Colleges Syllabus</strong>
+                        {syllabusUrl ? (
+                          <div className="file-actions">
+                            <a href={syllabusUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary">Open</a>
+                            <a href={syllabusUrl} download className="btn btn-sm btn-primary">Download</a>
+                          </div>
+                        ) : (
+                          <button className="btn btn-sm btn-unavailable" disabled>Not Available</button>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </>
+              ) : (
+                <>
+                  {tests.map(t => {
+                    const testUrl = getFileUrl(selectedGrade, 'test', t);
+                    return (
+                      <div key={t} className="file-card" style={{ opacity: testUrl ? 1 : 0.5 }}>
+                        <span className="file-card-icon">📄</span>
+                        <strong>Test {t}</strong>
+                        {testUrl ? (
+                          <div className="file-actions">
+                            <a href={testUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary">Open</a>
+                            <a href={testUrl} download className="btn btn-sm btn-primary">Download</a>
+                          </div>
+                        ) : (
+                          <button className="btn btn-sm btn-unavailable" disabled>Not Available</button>
+                        )}
+                      </div>
+                    );
+                  })}
 
-              {/* Syllabus card */}
-              {(() => {
-                const syllabusUrl = getFileUrl(selectedGrade, 'syllabus');
-                return (
-                  <div className="file-card syllabus-card" style={{ opacity: syllabusUrl ? 1 : 0.5 }}>
-                    <span className="file-card-icon">📑</span>
-                    <strong>Syllabus</strong>
-                    {syllabusUrl ? (
-                      <div className="file-actions">
-                        <a href={syllabusUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary">Open</a>
-                        <a href={syllabusUrl} download className="btn btn-sm btn-primary">Download</a>
+                  {/* Syllabus card */}
+                  {(() => {
+                    const syllabusUrl = getFileUrl(selectedGrade, 'syllabus');
+                    return (
+                      <div className="file-card syllabus-card" style={{ opacity: syllabusUrl ? 1 : 0.5 }}>
+                        <span className="file-card-icon">📑</span>
+                        <strong>Syllabus</strong>
+                        {syllabusUrl ? (
+                          <div className="file-actions">
+                            <a href={syllabusUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary">Open</a>
+                            <a href={syllabusUrl} download className="btn btn-sm btn-primary">Download</a>
+                          </div>
+                        ) : (
+                          <button className="btn btn-sm btn-unavailable" disabled>Not Available</button>
+                        )}
                       </div>
-                    ) : (
-                      <button className="btn btn-sm btn-unavailable" disabled>Not Available</button>
-                    )}
-                  </div>
-                );
-              })()}
+                    );
+                  })()}
+                </>
+              )}
             </div>
 
             <p className="resources-note">
