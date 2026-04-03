@@ -1,26 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Vite glob import — eagerly collects ALL PDFs from src/content (all subfolders)
 const pdfModules = import.meta.glob('/src/content/**/*.pdf', { eager: true, as: 'url' });
-// console.log('PDF modules found:', Object.keys(pdfModules));
 
 function Resources() {
   const [selectedGrade, setSelectedGrade] = useState(null);
+  const [timeLeft, setTimeLeft] = useState({});
 
   const grades = Array.from({ length: 10 }, (_, i) => i + 1);
   const tests = Array.from({ length: 10 }, (_, i) => i + 1);
 
-  /**
-   * Find a PDF URL by grade, type (syllabus | test), and optional test number.
-   * Matches against the full module path, case-insensitively.
-   */
+  // 🔥 Countdown target date (CHANGE THIS ANYTIME)
+  const competitionDate = new Date("2026-05-01T12:00:00").getTime();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = competitionDate - now;
+
+      if (distance <= 0) {
+        setTimeLeft({ expired: true });
+        clearInterval(interval);
+        return;
+      }
+
+      setTimeLeft({
+        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((distance / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((distance / (1000 * 60)) % 60),
+        seconds: Math.floor((distance / 1000) % 60),
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const getFileUrl = (grade, type, testNum = null) => {
-    // Construct a safe regex for the grade. Add \b or [^\d] so "Grade 1" doesn't match "Grade 10"
     const gradeKey = grade === 'Colleges' ? 'Colleges Grade' : `Grade ${grade}`;
     const gradeRegex = new RegExp(`${gradeKey}(?!\\d)`, 'i');
 
     for (const [path, rawUrl] of Object.entries(pdfModules)) {
-      // Very safely handle Vite 5 Production Module wrapper
       let url = rawUrl;
       if (typeof rawUrl === 'object' && rawUrl !== null) {
         url = rawUrl.default || Object.values(rawUrl)[0] || '';
@@ -29,25 +48,19 @@ function Resources() {
         url = String(url);
       }
 
-      // Normalise path for comparison
       const normalised = path.replace(/\\/g, '/');
       if (!gradeRegex.test(normalised)) continue;
 
       const lower = normalised.toLowerCase();
 
-      if (type === 'syllabus' && lower.includes('syllabus')) {
-        return url;
-      }
+      if (type === 'syllabus' && lower.includes('syllabus')) return url;
 
       if (type === 'test' && testNum !== null) {
-        // Match "test 1 ", "test 1.", "test1_" etc. but NOT test 10 when looking for 1
         const re = new RegExp(`test\\s*${testNum}[\\s\\._\\-]`, 'i');
         if (re.test(lower)) return url;
       }
 
-      if (type === 'combined' && lower.includes('combine')) {
-        return url;
-      }
+      if (type === 'combined' && lower.includes('combine')) return url;
     }
     return null;
   };
@@ -56,13 +69,13 @@ function Resources() {
     <div className="resources-page pt-32 pb-16 min-h-screen">
       <div className="container mx-auto" style={{ maxWidth: '960px' }}>
 
-        {/* Page Header */}
+        {/* Header */}
         <div className="text-center mb-10">
           <h1 className="hero-title resources-hero-title">
-            Study&nbsp;<span className="gradient-text">Resources</span>
+            Study <span className="gradient-text">Resources</span>
           </h1>
           <p className="hero-subtitle">
-            Select your grade below to view and download tests &amp; syllabus materials.
+            Select your grade below to view and download tests & syllabus materials.
           </p>
         </div>
 
@@ -88,9 +101,9 @@ function Resources() {
           </div>
         </div>
 
-        {/* Resource grid for selected grade */}
+        {/* Resources */}
         {selectedGrade && (
-          <div className="grade-content content-reveal active glass-box mt-5 p-5">
+          <div className="glass-box mt-5 p-5">
             <h3 className="gradient-text mb-4 text-center">
               {selectedGrade === 'Colleges' ? 'Colleges Grade' : `Grade ${selectedGrade}`} Resources
             </h3>
@@ -98,38 +111,34 @@ function Resources() {
             <div className="resource-grid">
               {selectedGrade === 'Colleges' ? (
                 <>
-                  {/* Two specific cards for Colleges Grade */}
+                  {/* Combined */}
                   {(() => {
-                    const combinedUrl = getFileUrl('Colleges', 'combined');
+                    const url = getFileUrl('Colleges', 'combined');
                     return (
-                      <div className="file-card" style={{ opacity: combinedUrl ? 1 : 0.5 }}>
-                        <span className="file-card-icon">📄</span>
-                        <strong>Combined Tests 1-10</strong>
-                        {combinedUrl ? (
-                          <div className="file-actions">
-                            <a href={combinedUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary">Open</a>
-                            <a href={combinedUrl} download className="btn btn-sm btn-primary">Download</a>
-                          </div>
-                        ) : (
-                          <button className="btn btn-sm btn-unavailable" disabled>Not Available</button>
-                        )}
+                      <div className="file-card" style={{ opacity: url ? 1 : 0.5 }}>
+                        📄 Combined Tests
+                        {url ? (
+                          <>
+                            <a href={url} target="_blank">Open</a>
+                            <a href={url} download>Download</a>
+                          </>
+                        ) : <button disabled>Not Available</button>}
                       </div>
                     );
                   })()}
+
+                  {/* Syllabus */}
                   {(() => {
-                    const syllabusUrl = getFileUrl('Colleges', 'syllabus');
+                    const url = getFileUrl('Colleges', 'syllabus');
                     return (
-                      <div className="file-card syllabus-card" style={{ opacity: syllabusUrl ? 1 : 0.5 }}>
-                        <span className="file-card-icon">📑</span>
-                        <strong>Colleges Syllabus</strong>
-                        {syllabusUrl ? (
-                          <div className="file-actions">
-                            <a href={syllabusUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary">Open</a>
-                            <a href={syllabusUrl} download className="btn btn-sm btn-primary">Download</a>
-                          </div>
-                        ) : (
-                          <button className="btn btn-sm btn-unavailable" disabled>Not Available</button>
-                        )}
+                      <div className="file-card" style={{ opacity: url ? 1 : 0.5 }}>
+                        📑 Syllabus
+                        {url ? (
+                          <>
+                            <a href={url} target="_blank">Open</a>
+                            <a href={url} download>Download</a>
+                          </>
+                        ) : <button disabled>Not Available</button>}
                       </div>
                     );
                   })()}
@@ -137,52 +146,75 @@ function Resources() {
               ) : (
                 <>
                   {tests.map(t => {
-                    const testUrl = getFileUrl(selectedGrade, 'test', t);
+                    const url = getFileUrl(selectedGrade, 'test', t);
                     return (
-                      <div key={t} className="file-card" style={{ opacity: testUrl ? 1 : 0.5 }}>
-                        <span className="file-card-icon">📄</span>
-                        <strong>Test {t}</strong>
-                        {testUrl ? (
-                          <div className="file-actions">
-                            <a href={testUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary">Open</a>
-                            <a href={testUrl} download className="btn btn-sm btn-primary">Download</a>
-                          </div>
-                        ) : (
-                          <button className="btn btn-sm btn-unavailable" disabled>Not Available</button>
-                        )}
+                      <div key={t} className="file-card" style={{ opacity: url ? 1 : 0.5 }}>
+                        📄 Test {t}
+                        {url ? (
+                          <>
+                            <a href={url} target="_blank">Open</a>
+                            <a href={url} download>Download</a>
+                          </>
+                        ) : <button disabled>Not Available</button>}
                       </div>
                     );
                   })}
-
-                  {/* Syllabus card */}
-                  {(() => {
-                    const syllabusUrl = getFileUrl(selectedGrade, 'syllabus');
-                    return (
-                      <div className="file-card syllabus-card" style={{ opacity: syllabusUrl ? 1 : 0.5 }}>
-                        <span className="file-card-icon">📑</span>
-                        <strong>Syllabus</strong>
-                        {syllabusUrl ? (
-                          <div className="file-actions">
-                            <a href={syllabusUrl} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary">Open</a>
-                            <a href={syllabusUrl} download className="btn btn-sm btn-primary">Download</a>
-                          </div>
-                        ) : (
-                          <button className="btn btn-sm btn-unavailable" disabled>Not Available</button>
-                        )}
-                      </div>
-                    );
-                  })()}
                 </>
               )}
             </div>
-
-            <p className="resources-note">
-              * If a file shows "Not Available" it hasn't been uploaded yet. Downloads save the PDF directly to your device.
-            </p>
           </div>
         )}
 
+        {/* 🔥 COUNTDOWN SECTION */}
+        <div className="glass-box mt-10 p-6 text-center relative overflow-hidden">
+
+          <h2 className="gradient-text mb-4 text-2xl">
+            ✨ Upcoming Writing Competition ✨
+          </h2>
+
+          {!timeLeft.expired ? (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '20px' }}>
+              <div>{timeLeft.days}d</div>
+              <div>{timeLeft.hours}h</div>
+              <div>{timeLeft.minutes}m</div>
+              <div>{timeLeft.seconds}s</div>
+            </div>
+          ) : (
+            <p style={{ color: 'green', fontWeight: 'bold' }}>
+              Competition Started 🚀
+            </p>
+          )}
+
+          <p style={{ marginTop: '10px' }}>
+            Countdown to the next writing competition!
+          </p>
+
+          {/* 👏 Animation */}
+          <div className="clap">👏👏👏👏👏</div>
+
+        </div>
+
       </div>
+
+      {/* 🎨 Animation CSS */}
+      <style>
+        {`
+          .clap {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            font-size: 24px;
+            animation: move 2s infinite;
+          }
+
+          @keyframes move {
+            0% { transform: translateY(-50%) scale(1); }
+            50% { transform: translateY(-60%) scale(1.2); }
+            100% { transform: translateY(-50%) scale(1); }
+          }
+        `}
+      </style>
+
     </div>
   );
 }
