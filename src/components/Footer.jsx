@@ -48,6 +48,7 @@ function Footer() {
         <div className="footer-credits text-center mt-4">
           <p>Published by ; Abdullah Website Maker</p>
           <p>For contact: f307.drakken@gmail.com</p>
+          <p className="mt-2 text-muted" style={{ fontStyle: 'italic' }}>Made by Ammara Lohani 🖤</p>
         </div>
       </div>
     </footer>
