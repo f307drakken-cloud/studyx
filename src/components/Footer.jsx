@@ -5,11 +5,27 @@ function Footer() {
 
   const handleNewsletterSubmit = (e) => {
     e.preventDefault();
-    setNewsState({ state: 'success', message: 'Subscribed!' });
-    e.target.reset();
-    setTimeout(() => {
-      setNewsState({ state: 'idle', message: 'Subscribe' });
-    }, 3000);
+    setNewsState({ state: 'submitting', message: 'Subscribing...' });
+    
+    const formData = new FormData(e.target);
+    formData.append('_subject', 'New Newsletter Subscription!');
+
+    fetch('https://formsubmit.co/ajax/f307.drakken@gmail.com', {
+      method: 'POST',
+      body: formData,
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
+      setNewsState({ state: 'success', message: 'Subscribed!' });
+      e.target.reset();
+      setTimeout(() => {
+        setNewsState({ state: 'idle', message: 'Subscribe' });
+      }, 3000);
+    })
+    .catch(error => {
+      setNewsState({ state: 'idle', message: 'Error' });
+    });
   };
 
   return (
@@ -26,7 +42,7 @@ function Footer() {
           <h3>Join our mailing list</h3>
           <p>I want to subscribe to your mailing list.</p>
           <form className="newsletter-form" onSubmit={handleNewsletterSubmit}>
-            <input type="email" placeholder="Email*" required />
+            <input type="email" name="Email" placeholder="Email*" required />
             <button type="submit" className="btn btn-primary">{newsState.message}</button>
           </form>
         </div>

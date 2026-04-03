@@ -41,13 +41,26 @@ function Home() {
   const handleRegistrationSubmit = (e) => {
     e.preventDefault();
     setFormState({ state: 'submitting', message: 'Submitting...' });
-    setTimeout(() => {
+    
+    const formData = new FormData(e.target);
+    formData.append('_subject', 'New Platform Registration!');
+
+    fetch('https://formsubmit.co/ajax/f307.drakken@gmail.com', {
+      method: 'POST',
+      body: formData,
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
       setFormState({ state: 'success', message: 'Success! Welcome to AbdullahHayatStudyHub' });
       e.target.reset();
       setTimeout(() => {
         setFormState({ state: 'idle', message: 'Submit' });
       }, 3000);
-    }, 1500);
+    })
+    .catch(error => {
+      setFormState({ state: 'idle', message: 'Error submitting. Try again.' });
+    });
   };
 
   const toggleFaq = (index) => {
@@ -116,22 +129,22 @@ function Home() {
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="firstName">First name*</label>
-                  <input type="text" id="firstName" required />
+                  <input type="text" id="firstName" name="First Name" required />
                 </div>
                 <div className="form-group">
                   <label htmlFor="lastName">Last name*</label>
-                  <input type="text" id="lastName" required />
+                  <input type="text" id="lastName" name="Last Name" required />
                 </div>
               </div>
               
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="email">Email*</label>
-                  <input type="email" id="email" required />
+                  <input type="email" id="email" name="Email" required />
                 </div>
                 <div className="form-group">
                   <label htmlFor="grade">Grade / Class*</label>
-                  <select id="grade" required defaultValue="">
+                  <select id="grade" name="Grade" required defaultValue="">
                     <option value="" disabled>Select your grade</option>
                     {[1,2,3,4,5,6,7,8,9,10].map(num => (
                       <option key={num} value={num}>Grade {num}</option>
@@ -155,7 +168,7 @@ function Home() {
 
               <div className="form-group">
                 <label htmlFor="learningMode">Preferred Learning Mode*</label>
-                <select id="learningMode" required defaultValue="">
+                <select id="learningMode" name="Learning Mode" required defaultValue="">
                   <option value="" disabled>Select mode</option>
                   <option value="Self-Practice">Self-Practice</option>
                   <option value="Guided Online Tutor">Guided Online Tutor</option>
@@ -168,17 +181,17 @@ function Home() {
 
               <div className="form-group">
                 <label htmlFor="reason">Reason for Joining*</label>
-                <textarea id="reason" rows="3" required></textarea>
+                <textarea id="reason" name="Reason" rows="3" required></textarea>
               </div>
 
               <div className="form-group">
                 <label htmlFor="notes">Questions or Notes*</label>
-                <textarea id="notes" rows="3" required></textarea>
+                <textarea id="notes" name="Notes" rows="3" required></textarea>
               </div>
 
               <div className="form-group policy-check">
                 <label className="checkbox-label" style={{alignItems: 'center'}}>
-                  <input type="checkbox" id="policy" required style={{margin: '0 10px 0 0'}} />
+                  <input type="checkbox" id="policy" name="Agreed to Privacy Policy" value="Yes" required style={{margin: '0 10px 0 0'}} />
                   <span>"I agree to AbdullahHayatStudyHub’s Privacy Policy and consent to the collection and use of my personal data for account creation, course access, and communication regarding my learning progress." *</span>
                 </label>
               </div>
