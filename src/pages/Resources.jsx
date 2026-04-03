@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 
 // Vite glob import — eagerly collects ALL PDFs from src/content (all subfolders)
-const pdfModules = import.meta.glob('/src/content/**/*.pdf', { as: 'url', eager: true });
-
-// Debug: log what Vite collected (remove after confirming it works)
+const pdfModules = import.meta.glob('/src/content/**/*.pdf', { eager: true, as: 'url' });
 // console.log('PDF modules found:', Object.keys(pdfModules));
 
 function Resources() {
@@ -21,7 +19,16 @@ function Resources() {
     const gradeKey = grade === 'Colleges' ? 'Colleges Grade' : `Grade ${grade}`;
     const gradeRegex = new RegExp(`${gradeKey}(?!\\d)`, 'i');
 
-    for (const [path, url] of Object.entries(pdfModules)) {
+    for (const [path, rawUrl] of Object.entries(pdfModules)) {
+      // Very safely handle Vite 5 Production Module wrapper
+      let url = rawUrl;
+      if (typeof rawUrl === 'object' && rawUrl !== null) {
+        url = rawUrl.default || Object.values(rawUrl)[0] || '';
+      }
+      if (typeof url !== 'string') {
+        url = String(url);
+      }
+
       // Normalise path for comparison
       const normalised = path.replace(/\\/g, '/');
       if (!gradeRegex.test(normalised)) continue;
